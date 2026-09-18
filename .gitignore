@@ -4,7 +4,20 @@ obj/
 artifacts/
 out/
 publish/
-dist/
+# dist/ is partially tracked: release artifacts are whitelisted below and pushed via Git LFS
+dist/*
+!dist/MeetVault-*-portable-win-x64.zip
+!dist/MeetVault-*-setup-win-x64.exe
+dist/portable/*
+!dist/portable/MeetVault
+dist/portable/MeetVault/*
+!dist/portable/MeetVault/*/
+!dist/portable/MeetVault/*.dll
+!dist/portable/MeetVault/*.exe
+!dist/portable/MeetVault/*.json
+!dist/portable/MeetVault/.portable-root
+dist/single-file/*
+!dist/single-file/*.exe
 
 # Local application data (models, databases, recordings, logs)
 runtime/
