@@ -44,12 +44,16 @@ public static partial class Program
         return 0;
     }
 
-    private static void AttachProgress(AppBootstrapper app)
+        private static void AttachProgress(AppBootstrapper app)
     {
-        app.Queue.Progress += (_, p) =>
+        // The CLI drives the processor directly (not via the queue), so subscribe to the
+        // processor's per-stage progress, which is the event actually raised here.
+        app.Processor.Progress += (_, p) =>
         {
             if (p.Percent >= 0)
                 Console.Write($"\r{p.Stage}: {p.Percent * 100:F1}%   ");
+            else
+                Console.Write($"\r{p.Stage}: {p.Message}   ");
         };
     }
 

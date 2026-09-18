@@ -141,7 +141,10 @@
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <TextBlock x:Name="DetailDate" Style="{StaticResource Muted}" Margin="0,0,14,0"/>
                         <TextBlock x:Name="DetailDuration" Style="{StaticResource Muted}" Margin="0,0,14,0"/>
-                        <TextBlock x:Name="DetailStatus" Style="{StaticResource Muted}"/>
+                                                <TextBlock x:Name="DetailStatus" Style="{StaticResource Muted}"/>
+                        <Button x:Name="ProcessButton" Style="{StaticResource SmallButton}"
+                                Content="Process" Click="ProcessButton_Click"
+                                Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                     </StackPanel>
 
                     <!-- Audio brief player -->
@@ -154,8 +157,9 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Audio Brief" FontWeight="SemiBold"/>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button x:Name="RegenerateBriefButton" Style="{StaticResource SmallButton}"
-                                            Content="Regenerate" Click="RegenerateBriefButton_Click" Margin="0,0,6,0"/>
+                                                                        <Button x:Name="RegenerateBriefButton" Style="{StaticResource SmallButton}"
+                                            Content="Regenerate" Click="RegenerateBriefButton_Click"
+                                            Margin="0,0,6,0" Visibility="Collapsed"/>
                                     <Button x:Name="ExportButton" Style="{StaticResource SmallButton}"
                                             Content="Export…" Click="ExportButton_Click"/>
                                 </StackPanel>

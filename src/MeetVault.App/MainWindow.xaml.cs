@@ -179,34 +179,62 @@ public partial class MainWindow : Window
 
     // ────────────────────────────────────────────────────────── processing progress
 
-    private void Queue_Progress(object? sender, MeetingProgress p)
+        private void Queue_Progress(object? sender, MeetingProgress p)
     {
         Dispatcher.BeginInvoke(() =>
         {
             if (_selectedMeeting?.Id == p.MeetingId)
             {
+                // Keep the in-memory selection in sync with live processing so the
+                // detail pane reflects the current stage without needing a refresh.
+                _selectedMeeting.Status = p.Status;
+                if (p.Error is not null) _selectedMeeting.LastError = p.Error;
+
                 DetailStatus.Text = p.Status is ProcessingStatus.Failed ? "Failed" : p.Stage;
-                if (p.Percent >= 0)
+
+                if (p.Status is ProcessingStatus.Completed)
                 {
-                    StatusProgress.IsIndeterminate = false;
-                    StatusProgress.Value = p.Percent;
+                    StatusProgress.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
                     StatusProgress.Visibility = Visibility.Visible;
+                    if (p.Percent >= 0)
+                    {
+                        StatusProgress.IsIndeterminate = false;
+                        StatusProgress.Value = p.Percent;
+                    }
+                    else
+                    {
+                        StatusProgress.IsIndeterminate = true;
+                    }
                 }
+
                 if (p.Status is ProcessingStatus.Failed && p.Error is not null)
-                {
                     ShowError(p.Error);
-                }
+                else
+                    HideError();
+
+                RefreshActionButtons();
             }
+
+            // Keep the global status bar live for any meeting being processed, whether or
+            // not it is currently selected, so background work is never invisible.
             if (p.Status is ProcessingStatus.Completed or ProcessingStatus.Failed or ProcessingStatus.Canceled)
             {
                 UpdateStatus($"{p.Stage}: {p.Message}");
-                if (p.Status == ProcessingStatus.Completed) HideError();
                 RefreshMeetings();
                 if (_selectedMeeting?.Id == p.MeetingId && p.Status == ProcessingStatus.Completed)
                 {
+                    // Reload from the DB so the generated brief/transcript/analysis appear.
                     _ = LoadDetailAsync(_selectedMeeting);
                 }
             }
+            else
+            {
+                UpdateStatus(p.Message);
+            }
+
             RefreshQueueText();
         });
     }
@@ -226,8 +254,16 @@ public partial class MainWindow : Window
         await LoadDetailAsync(meeting);
     }
 
-    private async Task LoadDetailAsync(Meeting meeting)
+        private async Task LoadDetailAsync(Meeting meeting)
     {
+        // Re-read the live DB row: a meeting may have been auto-processed or retried in
+        // the background since this selection was first loaded, so the object passed in
+        // may be stale (missing the generated brief / transcript / analysis).
+        var current = await _app.Repository.GetAsync(meeting.Id);
+        if (current is null) return;
+        meeting = current;
+        _selectedMeeting = current;
+
         try
         {
             DetailTitle.Text = meeting.Title;
@@ -301,13 +337,15 @@ public partial class MainWindow : Window
             TranscriptList.ItemsSource = hasTranscript ? transcript : null;
             TranscriptHeader.Visibility = hasTranscript ? Visibility.Visible : Visibility.Collapsed;
 
-            DetailPanel.Visibility = Visibility.Visible;
+                        DetailPanel.Visibility = Visibility.Visible;
             LoadPlayerFor(meeting);
 
             if (meeting.Status == ProcessingStatus.Failed && !string.IsNullOrEmpty(meeting.LastError))
                 ShowError(meeting.LastError);
             else
                 HideError();
+
+            RefreshActionButtons();
         }
         catch (Exception ex)
         {
@@ -512,12 +550,41 @@ public partial class MainWindow : Window
         UpdateStatus("Regenerating meeting brief…");
     }
 
-    private void RetryButton_Click(object sender, RoutedEventArgs e)
+        private void RetryButton_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedMeeting is null) return;
         HideError();
         _app.Queue.Enqueue(_selectedMeeting.Id, force: false);
         UpdateStatus("Retrying processing…");
+    }
+
+    /// <summary>Start / resume / retry processing for the currently selected meeting.</summary>
+    private void ProcessButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedMeeting is null) return;
+        _app.Queue.Enqueue(_selectedMeeting.Id, force: false);
+        UpdateStatus("Processing…");
+    }
+
+    /// <summary>Show the relevant retrigger affordance based on the selected meeting's status.</summary>
+    private void RefreshActionButtons()
+    {
+        if (_selectedMeeting is null)
+        {
+            ProcessButton.Visibility = Visibility.Collapsed;
+            RegenerateBriefButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var s = _selectedMeeting.Status;
+        // "Process" starts a meeting that hasn't finished yet, or retries one that failed/was canceled.
+        ProcessButton.Visibility = (s is ProcessingStatus.Imported
+                                    or ProcessingStatus.Failed
+                                    or ProcessingStatus.Canceled)
+            ? Visibility.Visible : Visibility.Collapsed;
+        // "Regenerate Brief" (full reprocess) only makes sense once a brief already exists.
+        RegenerateBriefButton.Visibility = s == ProcessingStatus.Completed
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ExportButton_Click(object sender, RoutedEventArgs e)
