@@ -8,6 +8,8 @@ publish/
 dist/*
 !dist/MeetVault-*-portable-win-x64.zip
 !dist/MeetVault-*-setup-win-x64.exe
+!dist/portable/
+!dist/single-file/
 dist/portable/*
 !dist/portable/MeetVault
 dist/portable/MeetVault/*
