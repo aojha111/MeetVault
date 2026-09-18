@@ -254,6 +254,76 @@ public partial class MainWindow : Window
         await LoadDetailAsync(meeting);
     }
 
+    private void RenameMeetingButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedMeeting is null) return;
+        RenameMeetingTextBox.Text = _selectedMeeting.Title;
+        DetailTitle.Visibility = Visibility.Collapsed;
+        RenameMeetingButton.Visibility = Visibility.Collapsed;
+        RenameMeetingTextBox.Visibility = Visibility.Visible;
+        SaveMeetingNameButton.Visibility = Visibility.Visible;
+        CancelMeetingNameButton.Visibility = Visibility.Visible;
+        RenameMeetingTextBox.Focus();
+        RenameMeetingTextBox.SelectAll();
+    }
+
+    private void CancelMeetingNameButton_Click(object sender, RoutedEventArgs e) => ExitRenameMode();
+
+    private async void SaveMeetingNameButton_Click(object sender, RoutedEventArgs e) => await SaveMeetingNameAsync();
+
+    private async void RenameMeetingTextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+        {
+            e.Handled = true;
+            await SaveMeetingNameAsync();
+        }
+        else if (e.Key == System.Windows.Input.Key.Escape)
+        {
+            e.Handled = true;
+            ExitRenameMode();
+        }
+    }
+
+    private async Task SaveMeetingNameAsync()
+    {
+        if (_selectedMeeting is null) return;
+        var title = RenameMeetingTextBox.Text.Trim();
+        if (title.Length == 0)
+        {
+            UpdateStatus("Meeting name cannot be empty.");
+            RenameMeetingTextBox.Focus();
+            return;
+        }
+
+        try
+        {
+            await _app.Meetings.UpdateDetailsAsync(
+                _selectedMeeting.Id,
+                title,
+                _selectedMeeting.MeetingDate,
+                _selectedMeeting.StartTime);
+            _selectedMeeting.Title = title;
+            ExitRenameMode();
+            RefreshMeetings();
+            DetailTitle.Text = title;
+            UpdateStatus("Meeting renamed.");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus("Rename failed: " + ex.Message);
+        }
+    }
+
+    private void ExitRenameMode()
+    {
+        DetailTitle.Visibility = Visibility.Visible;
+        RenameMeetingButton.Visibility = Visibility.Visible;
+        RenameMeetingTextBox.Visibility = Visibility.Collapsed;
+        SaveMeetingNameButton.Visibility = Visibility.Collapsed;
+        CancelMeetingNameButton.Visibility = Visibility.Collapsed;
+    }
+
         private async Task LoadDetailAsync(Meeting meeting)
     {
         // Re-read the live DB row: a meeting may have been auto-processed or retried in
@@ -562,8 +632,9 @@ public partial class MainWindow : Window
     private void ProcessButton_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedMeeting is null) return;
-        _app.Queue.Enqueue(_selectedMeeting.Id, force: false);
-        UpdateStatus("Processing…");
+        var force = _selectedMeeting.Status == ProcessingStatus.Completed;
+        _app.Queue.Enqueue(_selectedMeeting.Id, force);
+        UpdateStatus(force ? "Reprocessing…" : "Processing…");
     }
 
     /// <summary>Show the relevant retrigger affordance based on the selected meeting's status.</summary>
@@ -577,11 +648,10 @@ public partial class MainWindow : Window
         }
 
         var s = _selectedMeeting.Status;
-        // "Process" starts a meeting that hasn't finished yet, or retries one that failed/was canceled.
-        ProcessButton.Visibility = (s is ProcessingStatus.Imported
-                                    or ProcessingStatus.Failed
-                                    or ProcessingStatus.Canceled)
-            ? Visibility.Visible : Visibility.Collapsed;
+        // Keep a recovery action available until work is actively running.
+        ProcessButton.Visibility = s is ProcessingStatus.Queued or ProcessingStatus.Processing
+            ? Visibility.Collapsed : Visibility.Visible;
+        ProcessButton.Content = s == ProcessingStatus.Completed ? "Reprocess" : "Process";
         // "Regenerate Brief" (full reprocess) only makes sense once a brief already exists.
         RegenerateBriefButton.Visibility = s == ProcessingStatus.Completed
             ? Visibility.Visible : Visibility.Collapsed;

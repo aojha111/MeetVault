@@ -57,6 +57,18 @@ public class SqliteRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateDetails_RenamesMeeting()
+    {
+        var created = await _repo.CreateAsync(Meeting("Original name"));
+        var service = new MeetingService(_repo, (_, _) => _root);
+
+        await service.UpdateDetailsAsync(created.Id, "Renamed meeting", created.MeetingDate, created.StartTime);
+
+        var loaded = await _repo.GetAsync(created.Id);
+        Assert.Equal("Renamed meeting", loaded!.Title);
+    }
+
+    [Fact]
     public async Task Update_PersistsChanges()
     {
         var created = await _repo.CreateAsync(Meeting());

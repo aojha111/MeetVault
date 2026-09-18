@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Concurrent;
 
 namespace MeetVault.Infrastructure;
 
@@ -38,8 +39,20 @@ public static class ProcessRunner
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
 
-        process.OutputDataReceived += onStdoutLine ?? ((_, _) => { });
-        process.ErrorDataReceived += onStderrLine ?? ((_, _) => { });
+        var stdoutLines = new ConcurrentQueue<string>();
+        var stderrLines = new ConcurrentQueue<string>();
+        process.OutputDataReceived += (_, e) =>
+        {
+            if (e.Data is null) return;
+            stdoutLines.Enqueue(e.Data);
+            onStdoutLine?.Invoke(process, e);
+        };
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data is null) return;
+            stderrLines.Enqueue(e.Data);
+            onStderrLine?.Invoke(process, e);
+        };
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
@@ -53,8 +66,11 @@ public static class ProcessRunner
             throw;
         }
 
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
+        // WaitForExit flushes the asynchronous line readers. Do not call ReadToEnd here:
+        // mixing synchronous reads with Begin*ReadLine causes InvalidOperationException.
+        process.WaitForExit();
+        var stdout = string.Join(Environment.NewLine, stdoutLines);
+        var stderr = string.Join(Environment.NewLine, stderrLines);
         return new ProcessResult(process.ExitCode, stdout, stderr);
     }
 

@@ -137,7 +137,20 @@
             <!-- Detail pane -->
             <ScrollViewer Grid.Column="2" Margin="8,0,16,0" VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="DetailPanel" Margin="4,0,8,10" Visibility="Collapsed">
-                    <TextBlock x:Name="DetailTitle" FontSize="22" FontWeight="Bold" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="DetailTitle" FontSize="22" FontWeight="Bold" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    <Button x:Name="RenameMeetingButton" Style="{StaticResource SmallButton}"
+                        Content="Rename" Click="RenameMeetingButton_Click"
+                        Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    <TextBox x:Name="RenameMeetingTextBox" MinWidth="260" Visibility="Collapsed"
+                         VerticalAlignment="Center" KeyDown="RenameMeetingTextBox_KeyDown"/>
+                    <Button x:Name="SaveMeetingNameButton" Style="{StaticResource SmallButton}"
+                        Content="Save" Click="SaveMeetingNameButton_Click"
+                        Margin="6,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
+                    <Button x:Name="CancelMeetingNameButton" Style="{StaticResource SmallButton}"
+                        Content="Cancel" Click="CancelMeetingNameButton_Click"
+                        Margin="6,0,0,0" Visibility="Collapsed" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <TextBlock x:Name="DetailDate" Style="{StaticResource Muted}" Margin="0,0,14,0"/>
                         <TextBlock x:Name="DetailDuration" Style="{StaticResource Muted}" Margin="0,0,14,0"/>

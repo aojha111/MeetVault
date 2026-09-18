@@ -39,8 +39,14 @@ public sealed class ProcessingQueue : IDisposable
     public int PendingCount => _queue.Count;
     public bool IsPaused => _paused;
 
-        public void Enqueue(long meetingId, bool force = false)
+    public void Enqueue(long meetingId, bool force = false)
     {
+        if (_active.ContainsKey(meetingId) || _queue.Any(item => item.MeetingId == meetingId))
+        {
+            _log($"Meeting {meetingId} is already queued or processing.");
+            return;
+        }
+
         _queue.Enqueue(new QueueItem(meetingId, force));
         // Surface the queued state immediately so the UI reflects pending work without
         // having to wait for the background worker to pick the job up.
@@ -68,7 +74,7 @@ public sealed class ProcessingQueue : IDisposable
     public void Pause() => _paused = true;
     public void Resume() { _paused = false; _signal.Release(); }
 
-        private async Task WorkerLoopAsync()
+    private async Task WorkerLoopAsync()
     {
         while (true)
         {
@@ -112,7 +118,7 @@ public sealed class ProcessingQueue : IDisposable
         }
     }
 
-        public void Dispose()
+    public void Dispose()
     {
         _stop.Cancel();
         foreach (var cts in _active.Values) cts.Cancel();

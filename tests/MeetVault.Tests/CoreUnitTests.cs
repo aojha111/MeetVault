@@ -1,6 +1,28 @@
 using MeetVault.Core;
+using MeetVault.Infrastructure;
 
 namespace MeetVault.Tests;
+
+public class ProcessRunnerTests
+{
+    [Fact]
+    public async Task RunAsync_CapturesOutputWithoutMixingStreamModes()
+    {
+        var stdoutLines = new List<string>();
+        var stderrLines = new List<string>();
+        var result = await ProcessRunner.RunAsync(
+            Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe",
+            ["/c", "echo stdout & echo stderr 1>&2"],
+            onStdoutLine: (_, e) => { if (e.Data is not null) stdoutLines.Add(e.Data); },
+            onStderrLine: (_, e) => { if (e.Data is not null) stderrLines.Add(e.Data); });
+
+        Assert.True(result.Success);
+        Assert.Contains("stdout", result.StandardOutput);
+        Assert.Contains("stderr", result.StandardError);
+        Assert.Contains(stdoutLines, line => line.Trim() == "stdout");
+        Assert.Contains(stderrLines, line => line.Trim() == "stderr");
+    }
+}
 
 public class TimecodeFormatterTests
 {

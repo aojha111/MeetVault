@@ -105,6 +105,7 @@ public partial class ModelManagerWindow : Window
         if (missing.Count == 0)
         {
             StatusText.Text = "Everything recommended for this machine is already installed.";
+            await QueueUnprocessedMeetingsAsync();
             return;
         }
 
@@ -124,6 +125,7 @@ public partial class ModelManagerWindow : Window
                 await _app.ModelManager.InstallAsync(pack.Id, progress);
             }
             StatusText.Text = "Recommended set installed. MeetVault is ready — everything runs locally on CPU.";
+            await QueueUnprocessedMeetingsAsync();
             LoadCatalog();
         }
         catch (Exception ex)
@@ -147,6 +149,19 @@ public partial class ModelManagerWindow : Window
         }
         SummaryText.Text = $"{_rows.Count(r => r.IsInstalled)} of {_rows.Count} pack(s) installed. " +
             "Model weights are downloaded separately and never bundled with the app.";
+    }
+
+    private async Task QueueUnprocessedMeetingsAsync()
+    {
+        var meetings = await _app.Repository.GetAllAsync();
+        var pending = meetings.Where(m => m.Status is ProcessingStatus.Imported
+            or ProcessingStatus.Failed
+            or ProcessingStatus.Canceled).ToList();
+        foreach (var meeting in pending)
+            _app.Queue.Enqueue(meeting.Id);
+
+        if (pending.Count > 0)
+            StatusText.Text = $"Installed. Queued {pending.Count} meeting(s) for processing.";
     }
 
     private async void InstallButton_Click(object sender, RoutedEventArgs e)
@@ -175,6 +190,7 @@ public partial class ModelManagerWindow : Window
             }));
             await _app.ModelManager.InstallAsync(row.State.Pack.Id, progress);
             StatusText.Text = $"Installed {row.DisplayName} v{row.State.Pack.Version}.";
+            await QueueUnprocessedMeetingsAsync();
         }
         catch (Exception ex)
         {
