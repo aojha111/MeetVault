@@ -45,7 +45,28 @@ public sealed partial class AppBootstrapper
             var found = Directory.EnumerateFiles(dir, Path.GetFileName(expectedPath), SearchOption.AllDirectories).FirstOrDefault();
             if (found is not null) return found;
         }
-        return File.Exists(expectedPath) ? expectedPath : null;
+        if (File.Exists(expectedPath)) return expectedPath;
+        return FindOnPath(Path.GetFileName(expectedPath));
+    }
+
+    /// <summary>
+    /// Searches the system PATH so machines with ffmpeg/whisper/llama already installed
+    /// work even before (or without) downloading the matching runtime pack.
+    /// </summary>
+    private static string? FindOnPath(string exeName)
+    {
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (string.IsNullOrWhiteSpace(pathEnv)) return null;
+        foreach (var dir in pathEnv.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            try
+            {
+                var candidate = Path.Combine(dir, exeName);
+                if (File.Exists(candidate)) return candidate;
+            }
+            catch (ArgumentException) { /* malformed PATH entry */ }
+        }
+        return null;
     }
 
     private IReadOnlyList<(string VoiceId, string ModelPath)> ListPiperVoices()

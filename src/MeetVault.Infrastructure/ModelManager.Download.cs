@@ -49,26 +49,31 @@ public sealed partial class ModelManager
             try { Directory.Delete(installDir, recursive: true); } catch (IOException) { }
         }
         Directory.CreateDirectory(installDir);
-        ZipFile.ExtractToDirectory(zipPath, installDir, overwriteFiles: true);
-
-        // Some archives wrap everything in one folder; hoist a single child folder up if present.
-        var dirs = Directory.GetDirectories(installDir);
-        var files = Directory.GetFiles(installDir);
-        if (files.Length == 0 && dirs.Length == 1)
+        try
         {
-            var inner = dirs[0];
-            foreach (var entry in Directory.GetFileSystemEntries(inner))
+            ZipFile.ExtractToDirectory(zipPath, installDir, overwriteFiles: true);
+
+            // Flatten wrapper folders (piper/, Release/, ffmpeg-*-build/) and lift the
+            // declared executable with its sibling DLLs to the pack root.
+            ArchiveLayout.Normalize(installDir, pack.ExecutableRelativePath);
+
+            if (!string.IsNullOrEmpty(pack.ExecutableRelativePath)
+                && !File.Exists(Path.Combine(installDir, pack.ExecutableRelativePath)))
             {
-                Directory.Move(entry, Path.Combine(installDir, Path.GetFileName(entry)));
+                var listing = string.Join(", ", Directory.GetFileSystemEntries(installDir)
+                    .Select(p => Path.GetFileName(p))
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                    .Take(12));
+                throw new InvalidOperationException(
+                    $"Archive for {pack.Id} extracted, but expected file '{pack.ExecutableRelativePath}' was not found. Extracted top-level entries: {listing}");
             }
-            Directory.Delete(inner);
         }
-
-        if (!string.IsNullOrEmpty(pack.ExecutableRelativePath)
-            && !File.Exists(Path.Combine(installDir, pack.ExecutableRelativePath)))
+        catch (Exception ex) when (ex is InvalidDataException or IOException or InvalidOperationException)
         {
+            // Remove the half-installed directory so the pack stays cleanly "Not installed".
+            try { Directory.Delete(installDir, recursive: true); } catch (IOException) { }
             throw new InvalidOperationException(
-                $"Archive for {pack.Id} extracted but expected file '{pack.ExecutableRelativePath}' was not found.");
+                $"Installation of {pack.DisplayName} failed: {ex.Message}", ex);
         }
     }
 
