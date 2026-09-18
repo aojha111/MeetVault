@@ -1,0 +1,33 @@
+# Build artifacts
+bin/
+obj/
+artifacts/
+out/
+publish/
+dist/
+
+# Local application data (models, databases, recordings, logs)
+runtime/
+models/
+data/
+logs/
+downloads/
+*.db
+*.db-shm
+*.db-wal
+
+# Sample recordings are generated locally by scripts
+fixtures/*.wav
+fixtures/*.mp4
+fixtures/analysis-*.json
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+.DS_Store

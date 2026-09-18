@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MeetVault.App/MeetVault.App.csproj" />
+    <Project Path="src/MeetVault.Cli/MeetVault.Cli.csproj" />
+    <Project Path="src/MeetVault.Core/MeetVault.Core.csproj" />
+    <Project Path="src/MeetVault.Infrastructure/MeetVault.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MeetVault.Tests/MeetVault.Tests.csproj" />
+  </Folder>
+</Solution>

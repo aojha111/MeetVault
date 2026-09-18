@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- MeetVault dark palette. Same keys as Light.xaml; swapped at runtime by ThemeManager. -->
+    <SolidColorBrush x:Key="Bg.Window" Color="#1E1F25"/>
+    <SolidColorBrush x:Key="Bg.Header" Color="#17181D"/>
+    <SolidColorBrush x:Key="Bg.Card" Color="#23252D"/>
+    <SolidColorBrush x:Key="Bg.Control" Color="#2B2D36"/>
+    <SolidColorBrush x:Key="Bg.Hover" Color="#343845"/>
+    <SolidColorBrush x:Key="Bg.Popup" Color="#26282F"/>
+    <SolidColorBrush x:Key="Fg.Primary" Color="#E8E8EC"/>
+    <SolidColorBrush x:Key="Fg.Muted" Color="#9A9DA8"/>
+    <SolidColorBrush x:Key="Accent" Color="#3B82F6"/>
+    <SolidColorBrush x:Key="Fg.Accent" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Border.Subtle" Color="#3A3D49"/>
+    <SolidColorBrush x:Key="Border.Separator" Color="#33363F"/>
+    <SolidColorBrush x:Key="Status.Good" Color="#6EE7A0"/>
+    <SolidColorBrush x:Key="Status.Warn" Color="#F5B04D"/>
+    <SolidColorBrush x:Key="Status.Error.Fg" Color="#F1AEB5"/>
+    <SolidColorBrush x:Key="Bg.Error" Color="#3A2326"/>
+
+    <!-- WPF system-template selections (TreeView etc.) follow the palette. -->
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#343845"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#E8E8EC"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#2E3140"/>
+</ResourceDictionary>

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>MeetVault.Cli</RootNamespace>
+    <AssemblyName>mvault</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MeetVault.Core\MeetVault.Core.csproj" />
+    <ProjectReference Include="..\MeetVault.Infrastructure\MeetVault.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
+
